@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>8. Osztályos Fizika Gyakorló Portál</title>
+    <title>7. osztályos mozgásgyakorló</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -121,18 +121,19 @@
 
 <div class="container">
     <div class="header">
-        <h1>⚡ Fizika Gyakorló Portál (8. Osztály)</h1>
+        <h1>⚡ Mozgásgyakorló (7. osztály)</h1>
         <span id="user-display" style="font-weight: bold; color: #64748b;"></span>
     </div>
 
     <!-- DIÁK FELÜLET -->
     <div id="student-tab">
         <div id="login-section" class="card">
-            <h3>Kérlek, add meg a neved a gyakorlás kezdéséhez:</h3>
+            <h3>Jelentkezz be névvel vagy tanulói azonosítóval:</h3>
             <div class="form-group">
-                <input type="text" id="student-name" placeholder="Teljes név (pl. Kovács Péter)">
+                <input type="text" id="student-name" maxlength="30" autocomplete="off" placeholder="Név vagy tanulói kód">
             </div>
             <button class="btn" onclick="registerStudent()">Gyakorlás indítása</button>
+            <p style="font-size:0.9rem; color:#64748b;">A feladatok előre elkészített mintákból, véletlenszerű adatokkal készülnek. Nincs AI- vagy API-hívás. Az eredmények ezen a böngészőn tárolódnak; a tanári oldallal csak azonos böngészőben és webcím (origin) alatt közösek.</p>
         </div>
 
         <div id="practice-section" style="display:none;">
@@ -140,12 +141,12 @@
                 <div class="form-group">
                     <label>Válassz nehézségi szintet:</label>
                     <select id="difficulty-select" onchange="generateProblem()">
-                        <option value="easy">🟢 Könnyű (Adatok kiírva)</option>
-                        <option value="medium" selected>🟡 Közepes (Adatkiírás + Számolás)</option>
-                        <option value="hard">🔴 Nehéz (Átváltás + Számolás)</option>
+                        <option value="easy">🟢 Könnyű (Adatok megadva)</option>
+                        <option value="medium" selected>🟡 Közepes (Adatok kigyűjtése)</option>
+                        <option value="hard">🔴 Nehéz (Átváltás és számolás)</option>
                     </select>
                 </div>
-                <button class="btn" onclick="generateProblem()" style="background:#475569;">🔄 Új feladat kérése</button>
+                <button class="btn" onclick="generateProblem()" style="background:#475569;">🔄 Új feladat</button>
             </div>
 
             <div class="card" id="problem-card">
@@ -155,13 +156,13 @@
                 </div>
                 <p id="problem-text" style="font-size:1.1rem; line-height:1.5;"></p>
 
-                <!-- KÖNNYŰ SZINT: ELŐRE KIÍRT ADATOK -->
+                <!-- Könnyű szint: előre megadott adatok -->
                 <div id="easy-data-container" class="data-box" style="display:none;">
                     <strong>Megadott adatok a feladatból:</strong>
                     <div id="easy-data-list"></div>
                 </div>
 
-                <!-- KÖZEPES ÉS NEHÉZ SZINT: DIÁK ADATKÍRÁSA -->
+                <!-- Közepes és nehéz szint: adatgyűjtés -->
                 <div id="medium-hard-data-container" style="display:none; margin-top:15px; border-top:1px solid #cbd5e1; padding-top:15px;">
                     <h4>1. Adatok kigyűjtése a szövegből:</h4>
                     <div id="data-inputs"></div>
@@ -186,99 +187,106 @@
     let currentStudent = localStorage.getItem('currentStudent') || '';
     let currentProblem = null;
     let attempts = 0;
+    let alreadySolved = false;
 
-    const problemTemplates = [
-        {
-            type: 'ohm',
-            title: 'Ohm-törvénye (Feszültség és Áramerősség)',
-            gen: (diff) => {
-                let U = Math.floor(Math.random() * 20 + 1) * 10;
-                let R = Math.floor(Math.random() * 10 + 1) * 5;
-                let I = U / R;
-
-                if (diff === 'easy') {
-                    return {
-                        text: `Egy elektromos fűtőtest ellenállása R = ${R} Ω. Mekkora áramerősség folyik át rajta, ha U = ${U} V feszültségre csatlakoztatjuk?`,
-                        data: { U: U, R: R },
-                        inputs: [],
-                        target: I,
-                        unit: 'A',
-                        label: 'Áramerősség (I) amperben:'
-                    };
-                } else if (diff === 'medium') {
-                    return {
-                        text: `Egy áramkörben lévő fogyasztó ellenállása ${R} Ω. A mérőműszer szerint ${U} V feszültség kapcsolódik rá. Számítsd ki az áramerősséget!`,
-                        data: {},
-                        inputs: [
-                            { key: 'U', name: 'Feszültség (U)', correct: U, unit: 'V' },
-                            { key: 'R', name: 'Ellenállás (R)', correct: R, unit: 'Ω' }
-                        ],
-                        target: I,
-                        unit: 'A',
-                        label: 'Kiszámított áramerősség (I) A-ben:'
-                    };
-                } else {
-                    let I_mA = I * 1000;
-                    return {
-                        text: `Egy elektronikai alkatrészen ${U} V feszültség hatására ${I_mA} mA áramerősség folyik át. Számítsd ki az alkatrész ellenállását! (Figyelj a mértékegység-átváltásra!)`,
-                        data: {},
-                        inputs: [
-                            { key: 'U', name: 'Feszültség (U)', correct: U, unit: 'V' },
-                            { key: 'I', name: 'Áramerősség A-ben (I)', correct: I, unit: 'A' }
-                        ],
-                        target: R,
-                        unit: 'Ω',
-                        label: 'Kiszámított ellenállás (R) Ω-ban:'
-                    };
-                }
+    const problemTemplates = {
+        easy: [
+            () => {
+                const speed = (Math.floor(Math.random() * 8) + 2) * 5;
+                const time = Math.floor(Math.random() * 5) + 1;
+                return {
+                    text: `Egy kerékpáros ${speed} km/h állandó sebességgel halad ${time} órán át. Mekkora utat tesz meg?`,
+                    data: { 'Sebesség': `${speed} km/h`, 'Idő': `${time} h` },
+                    inputs: [], target: speed * time, unit: 'km', label: 'Megtett út kilométerben:',
+                    hint: 'Használd az s = v · t összefüggést!'
+                };
+            },
+            () => {
+                const distance = (Math.floor(Math.random() * 8) + 2) * 100;
+                const time = (Math.floor(Math.random() * 5) + 1) * 10;
+                return {
+                    text: `Egy gyalogos ${distance} métert tesz meg ${time} perc alatt. Mekkora az átlagsebessége méter/percben?`,
+                    data: { 'Megtett út': `${distance} m`, 'Idő': `${time} perc` },
+                    inputs: [], target: distance / time, unit: 'm/perc', label: 'Átlagsebesség méter/percben:',
+                    hint: 'Használd a v = s / t összefüggést!'
+                };
+            },
+            () => {
+                const meters = (Math.floor(Math.random() * 9) + 1) * 1000;
+                return {
+                    text: `Váltsd át a ${meters} métert kilométerre!`,
+                    data: { 'Átváltás': '1000 m = 1 km' },
+                    inputs: [], target: meters / 1000, unit: 'km', label: 'Távolság kilométerben:',
+                    hint: '1000 méter = 1 kilométer.'
+                };
             }
-        },
-        {
-            type: 'power',
-            title: 'Elektromos Teljesítmény',
-            gen: (diff) => {
-                let U = 230;
-                let I = Math.floor(Math.random() * 10 + 1);
-                let P = U * I;
-
-                if (diff === 'easy') {
-                    return {
-                        text: `Egy háztartási eszköz a 230 V-os hálózatra kapcsolva ${I} A áramot vesz fel. Mekkora az elektromos teljesítménye?`,
-                        data: { U: 230, I: I },
-                        inputs: [],
-                        target: P,
-                        unit: 'W',
-                        label: 'Teljesítmény (P) Wattban:'
-                    };
-                } else if (diff === 'medium') {
-                    return {
-                        text: `A konyhai vízforraló 230 V-os feszültségen működik, és ${I} A áramerősséget vesz fel a hálózatból. Mekkora a készülék teljesítménye?`,
-                        data: {},
-                        inputs: [
-                            { key: 'U', name: 'Feszültség (U)', correct: 230, unit: 'V' },
-                            { key: 'I', name: 'Áramerősség (I)', correct: I, unit: 'A' }
-                        ],
-                        target: P,
-                        unit: 'W',
-                        label: 'Kiszámított teljesítmény (P) W-ban:'
-                    };
-                } else {
-                    let P_kW = P / 1000;
-                    return {
-                        text: `Egy elektromos sütő teljesítménye ${P_kW} kW. Mekkora áramot vesz fel a hálózatból, ha a hálózati feszültség 230 V?`,
-                        data: {},
-                        inputs: [
-                            { key: 'P', name: 'Teljesítmény W-ban (P)', correct: P, unit: 'W' },
-                            { key: 'U', name: 'Feszültség (U)', correct: 230, unit: 'V' }
-                        ],
-                        target: I,
-                        unit: 'A',
-                        label: 'Kiszámított áramerősség (I) A-ben:'
-                    };
-                }
+        ],
+        medium: [
+            () => {
+                const distance = (Math.floor(Math.random() * 8) + 2) * 100;
+                const time = (Math.floor(Math.random() * 5) + 1) * 10;
+                return {
+                    text: `Egy gyalogos ${distance} métert tesz meg ${time} perc alatt. Mekkora az átlagsebessége méter/percben?`,
+                    data: {}, inputs: [
+                        { name: 'Megtett út', correct: distance, unit: 'm' },
+                        { name: 'Eltelt idő', correct: time, unit: 'perc' }
+                    ],
+                    target: distance / time, unit: 'm/perc', label: 'Átlagsebesség méter/percben:',
+                    hint: 'Használd a v = s / t összefüggést!'
+                };
+            },
+            () => {
+                const speed = (Math.floor(Math.random() * 5) + 2) * 3;
+                const time = (Math.floor(Math.random() * 8) + 2) * 10;
+                return {
+                    text: `Egy vonat ${speed} km/h átlagsebességgel ${time} perc alatt tesz meg egy utat. Mekkora ez az út kilométerben?`,
+                    data: {}, inputs: [
+                        { name: 'Átlagsebesség', correct: speed, unit: 'km/h' },
+                        { name: 'Eltelt idő', correct: time, unit: 'perc' }
+                    ],
+                    target: speed * time / 60, unit: 'km', label: 'Megtett út kilométerben:',
+                    hint: 'Váltsd az időt órára, majd használd az s = v · t összefüggést!'
+                };
             }
-        }
-    ];
+        ],
+        hard: [
+            () => {
+                const speed = (Math.floor(Math.random() * 8) + 2) * 5;
+                const time = (Math.floor(Math.random() * 6) + 2) * 10;
+                return {
+                    text: `Egy kerékpáros ${speed} km/h sebességgel ${time} percig halad. Hány métert tesz meg? Előbb váltsd át az időt órára!`,
+                    data: {}, inputs: [
+                        { name: 'Sebesség', correct: speed, unit: 'km/h' },
+                        { name: 'Idő', correct: time, unit: 'perc' }
+                    ],
+                    target: speed * time / 60 * 1000, unit: 'm', label: 'Megtett út méterben:',
+                    hint: 'Váltsd az időt órára, számítsd ki az utat kilométerben, majd váltsd méterre!'
+                };
+            },
+            () => {
+                const distance = (Math.floor(Math.random() * 8) + 2) * 1000;
+                const speed = (Math.floor(Math.random() * 6) + 3) * 5;
+                return {
+                    text: `Egy autó ${distance} métert tesz meg ${speed} km/h átlagsebességgel. Hány percig tart az út? Váltsd át a távolságot kilométerre!`,
+                    data: {}, inputs: [
+                        { name: 'Megtett út', correct: distance, unit: 'm' },
+                        { name: 'Átlagsebesség', correct: speed, unit: 'km/h' }
+                    ],
+                    target: distance / 1000 / speed * 60, unit: 'perc', label: 'Menetidő percben:',
+                    hint: 'Váltsd az utat kilométerre, használd a t = s / v összefüggést, majd váltsd az órát percre!'
+                };
+            },
+            () => {
+                const minutes = (Math.floor(Math.random() * 9) + 1) * 10;
+                return {
+                    text: `Váltsd át a ${minutes} percet másodpercre!`,
+                    data: { 'Átváltás': '1 perc = 60 másodperc' },
+                    inputs: [], target: minutes * 60, unit: 's', label: 'Idő másodpercben:',
+                    hint: '1 perc = 60 másodperc.'
+                };
+            }
+        ]
+    };
 
     window.onload = function() {
         if (currentStudent) {
@@ -288,7 +296,7 @@
 
     function registerStudent() {
         const name = document.getElementById('student-name').value.trim();
-        if (!name) { alert('Kérlek, add meg a neved!'); return; }
+        if (!name) { alert('Kérlek, add meg a neved vagy tanulói azonosítódat!'); return; }
         currentStudent = name;
         localStorage.setItem('currentStudent', currentStudent);
         showPractice();
@@ -303,9 +311,11 @@
 
     function generateProblem() {
         attempts = 0;
+        alreadySolved = false;
         document.getElementById('retry-count').innerText = 'Próbálkozások: 0';
         document.getElementById('feedback-box').className = 'feedback';
         document.getElementById('student-answer').value = '';
+        document.querySelector('#problem-card button').disabled = false;
 
         const diff = document.getElementById('difficulty-select').value;
         const badge = document.getElementById('problem-badge');
@@ -321,8 +331,8 @@
             badge.className = 'badge badge-hard';
         }
 
-        const template = problemTemplates[Math.floor(Math.random() * problemTemplates.length)];
-        currentProblem = template.gen(diff);
+        const templates = problemTemplates[diff];
+        currentProblem = templates[Math.floor(Math.random() * templates.length)]();
 
         document.getElementById('problem-text').innerText = currentProblem.text;
         document.getElementById('answer-label').innerText = currentProblem.label;
@@ -353,6 +363,7 @@
     }
 
     function checkAnswer() {
+        if (alreadySolved) return;
         attempts++;
         document.getElementById('retry-count').innerText = `Próbálkozások: ${attempts}`;
         const diff = document.getElementById('difficulty-select').value;
@@ -372,13 +383,15 @@
         }
 
         const answer = parseFloat(document.getElementById('student-answer').value);
-        if (isNaN(answer) || Math.abs(answer - currentProblem.target) > 0.05) {
+        if (isNaN(answer) || Math.abs(answer - currentProblem.target) > Math.max(0.05, Math.abs(currentProblem.target) * 0.001)) {
             feedback.className = 'feedback error';
-            feedback.innerText = '❌ A kiszámolt végeredmény nem pontos. Próbáld újra a képlet alapján!';
+            feedback.innerText = `❌ Még nem pontos. ${currentProblem.hint} Próbáld újra!`;
             saveAttemptStats(currentStudent, diff, false);
         } else {
             feedback.className = 'feedback success';
-            feedback.innerText = '🎉 Helyes megoldás! Szép munka!';
+            feedback.innerText = `🎉 Helyes megoldás: ${currentProblem.target} ${currentProblem.unit}. Szép munka!`;
+            alreadySolved = true;
+            document.querySelector('#problem-card button').disabled = true;
             saveAttemptStats(currentStudent, diff, true);
         }
     }

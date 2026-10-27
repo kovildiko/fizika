@@ -121,10 +121,11 @@
     <div id="teacher-dashboard" style="display:none;">
         <h3>📊 Diákok haladása és eredményei</h3>
         <p>Az alábbi táblázat mutatja a diákok által sikeresen megoldott feladatok számát nehézségi szintekre bontva, valamint az újrapróbálkozásokat.</p>
+        <p style="font-size:0.9rem; color:#64748b;">Az eredmények csak akkor láthatók itt, ha a tanulói és a tanári oldal ugyanabban a böngészőben és azonos webcím (origin) alatt fut. A Teamsbe ágyazott oldalak külön webcím vagy böngészőkörnyezet esetén nem szinkronizálnak automatikusan.</p>
         <table>
             <thead>
                 <tr>
-                    <th>Diák Neve</th>
+                    <th>Diák neve/azonosítója</th>
                     <th>🟢 Könnyű</th>
                     <th>🟡 Közepes</th>
                     <th>🔴 Nehéz</th>
@@ -160,20 +161,22 @@
         const tbody = document.getElementById('stats-table-body');
         tbody.innerHTML = '';
 
-        for (let student in stats) {
-            let s = stats[student];
+        for (const [student, s] of Object.entries(stats)) {
             let total = s.easy + s.medium + s.hard;
-            let row = `<tr>
-                <td><strong>${student}</strong></td>
-                <td>${s.easy}</td>
-                <td>${s.medium}</td>
-                <td>${s.hard}</td>
-                <td><strong style="color:var(--primary);">${total}</strong></td>
-                <td><span style="color:var(--error);">${s.retries || 0}</span></td>
-            </tr>`;
-            tbody.innerHTML += row;
+            const row = tbody.insertRow();
+            [student, s.easy, s.medium, s.hard, total, s.retries || 0].forEach((value, index) => {
+                const cell = row.insertCell();
+                cell.textContent = value;
+                if (index === 0 || index === 4) cell.style.fontWeight = 'bold';
+                if (index === 4) cell.style.color = 'var(--primary)';
+                if (index === 5) cell.style.color = 'var(--error)';
+            });
         }
     }
+
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'physics_stats') loadTeacherStats();
+    });
 
     function exportCSV() {
         let stats = JSON.parse(localStorage.getItem('physics_stats') || '{}');
