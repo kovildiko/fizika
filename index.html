@@ -139,7 +139,14 @@
         <div id="practice-section" style="display:none;">
             <div class="card">
                 <div class="form-group">
-                    <label>Válassz nehézségi szintet:</label>
+                    <label for="topic-select">Válassz témakört:</label>
+                    <select id="topic-select" onchange="generateProblem()">
+                        <option value="motion">Mozgás alapjai</option>
+                        <option value="freefall-review">Elejtett test és összefoglalás (37–53. oldal)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="difficulty-select">Válassz nehézségi szintet:</label>
                     <select id="difficulty-select" onchange="generateProblem()">
                         <option value="easy">🟢 Könnyű (Adatok megadva)</option>
                         <option value="medium" selected>🟡 Közepes (Adatok kigyűjtése)</option>
@@ -168,7 +175,14 @@
                     <div id="data-inputs"></div>
                 </div>
 
-                <div style="margin-top:15px; border-top:1px solid #cbd5e1; padding-top:15px;">
+                <div id="choice-answer-container" class="form-group" style="display:none; margin-top:15px; border-top:1px solid #cbd5e1; padding-top:15px;">
+                    <label for="student-choice">Válaszd ki a helyes választ:</label>
+                    <select id="student-choice">
+                        <option value="">Válassz...</option>
+                    </select>
+                </div>
+
+                <div id="number-answer-container" style="margin-top:15px; border-top:1px solid #cbd5e1; padding-top:15px;">
                     <h4>2. Számítsd ki a végeredményt:</h4>
                     <div class="form-group">
                         <label id="answer-label">Végeredmény:</label>
@@ -190,6 +204,7 @@
     let alreadySolved = false;
 
     const problemTemplates = {
+        motion: {
         easy: [
             () => {
                 const speed = (Math.floor(Math.random() * 8) + 2) * 5;
@@ -286,6 +301,207 @@
                 };
             }
         ]
+        },
+        'freefall-review': {
+            easy: [
+                () => {
+                    const time = Math.floor(Math.random() * 4) + 1;
+                    return {
+                        text: `Egy labdát nyugalomból elengedünk. Körülbelül mekkora utat tesz meg ${time} s alatt? Számolj g ≈ 10 m/s² értékkel!`,
+                        data: { 'Esési idő': `${time} s`, 'Összefüggés': 's ≈ 5 · t²' },
+                        inputs: [], target: 5 * time * time, unit: 'm', label: 'Esési út méterben:',
+                        hint: 'Szabadesésnél az út közelítőleg s = 5 · t².'
+                    };
+                },
+                () => {
+                    const time = Math.floor(Math.random() * 5) + 1;
+                    return {
+                        text: `Közelítőleg mekkora sebességgel esik egy test ${time} s szabadesés után?`,
+                        data: { 'Nehézségi gyorsulás': 'g ≈ 10 m/s²' },
+                        inputs: [], target: 10 * time, unit: 'm/s', label: 'Sebesség méter/másodpercben:',
+                        hint: 'A sebesség másodpercenként körülbelül 10 m/s-mal nő.'
+                    };
+                },
+                () => ({
+                    text: 'Melyik feltétel mellett beszélünk szabadesésről?',
+                    data: {},
+                    inputs: [],
+                    choices: [
+                        'A testre csak a gravitáció hat, a levegő hatását elhanyagoljuk.',
+                        'A testet egy motor lefelé húzza.',
+                        'A test egyenletes sebességgel halad a talajon.'
+                    ],
+                    target: 0,
+                    hint: 'Gondold végig, melyik erő okozza a szabadesést!'
+                }),
+                () => ({
+                    text: 'Két különböző tömegű tárgyat egyszerre ejtünk le légüres térben, azonos magasságból. Mit várunk?',
+                    data: {},
+                    inputs: [],
+                    choices: [
+                        'A nehezebb tárgy ér le előbb.',
+                        'Egyszerre érnek le, mert a szabadesés gyorsulása azonos.',
+                        'A könnyebb tárgy ér le előbb.'
+                    ],
+                    target: 1,
+                    hint: 'Légüres térben egyik testet sem lassítja a levegő.'
+                }),
+                () => ({
+                    text: 'Miért eshet lassabban egy papírlap, mint egy összegyűrt papírgolyó?',
+                    data: {},
+                    inputs: [],
+                    choices: [
+                        'A lap nagyobb felületére erősebben hat a légellenállás.',
+                        'A gravitáció csak a papírgolyóra hat.',
+                        'A papírnak nincs tömege.'
+                    ],
+                    target: 0,
+                    hint: 'A levegő fékező hatása az alak és a felület miatt különbözhet.'
+                })
+            ],
+            medium: [
+                () => {
+                    const time = Math.floor(Math.random() * 5) + 2;
+                    const height = 5 * time * time;
+                    return {
+                        text: `Egy tárgyat nyugalomból leejtünk. Körülbelül ${height} m-t zuhan. Hány másodpercig esik? Használd az s ≈ 5 · t² összefüggést!`,
+                        data: {},
+                        inputs: [{ name: 'Esési út', correct: height, unit: 'm' }],
+                        target: time, unit: 's', label: 'Esési idő másodpercben:',
+                        hint: 'Keresd meg, melyik idő négyzete szorozva 5-tel adja a megadott utat!'
+                    };
+                },
+                () => {
+                    const time = Math.floor(Math.random() * 6) + 2;
+                    const initialSpeed = Math.floor(Math.random() * 4) * 5;
+                    const finalSpeed = initialSpeed + 10 * time;
+                    return {
+                        text: `Egy jármű sebessége ${time} s alatt ${initialSpeed} m/s-ról ${finalSpeed} m/s-ra változik. Mekkora a gyorsulása?`,
+                        data: {},
+                        inputs: [
+                            { name: 'Kezdősebesség', correct: initialSpeed, unit: 'm/s' },
+                            { name: 'Végsebesség', correct: finalSpeed, unit: 'm/s' },
+                            { name: 'Időtartam', correct: time, unit: 's' }
+                        ],
+                        target: 10, unit: 'm/s²', label: 'Gyorsulás m/s²-ben:',
+                        hint: 'A gyorsulás a sebességváltozás osztva az eltelt idővel.'
+                    };
+                },
+                () => {
+                    const distances = [120, 180, 240, 300];
+                    const distance = distances[Math.floor(Math.random() * distances.length)];
+                    const time = distance / 60;
+                    return {
+                        text: `Egy futó ${distance} m-t tesz meg ${time} perc alatt. Mennyi az átlagsebessége m/percben?`,
+                        data: {},
+                        inputs: [
+                            { name: 'Teljes út', correct: distance, unit: 'm' },
+                            { name: 'Teljes idő', correct: time, unit: 'perc' }
+                        ],
+                        target: distance / time, unit: 'm/perc', label: 'Átlagsebesség m/percben:',
+                        hint: 'Az átlagsebesség a teljes út osztva a teljes menetidővel.'
+                    };
+                },
+                () => ({
+                    text: 'Egy elejtett test út–idő grafikonja kezdetben lapos, később egyre meredekebb. Mit jelez ez?',
+                    data: {},
+                    inputs: [],
+                    choices: [
+                        'A test egyre gyorsabban mozog.',
+                        'A test végig nyugalomban van.',
+                        'A test sebessége állandó.'
+                    ],
+                    target: 0,
+                    hint: 'Az út–idő grafikon meredeksége a mozgás gyorsaságáról árulkodik.'
+                }),
+                () => {
+                    const outward = (Math.floor(Math.random() * 4) + 2) * 100;
+                    return {
+                        text: `Egy tanuló ${outward} m-re elsétál a rajtvonaltól, majd visszatér a rajtvonalhoz. Mekkora a teljes útja és az elmozdulása?`,
+                        data: {},
+                        inputs: [],
+                        choices: [
+                            `Út: ${2 * outward} m; elmozdulás: 0 m.`,
+                            `Út: 0 m; elmozdulás: ${outward} m.`,
+                            `Út: ${outward} m; elmozdulás: ${2 * outward} m.`
+                        ],
+                        target: 0,
+                        hint: 'Az út a teljes pályaszakasz, az elmozdulás a kezdő- és véghelyzet különbsége.'
+                    };
+                }
+            ],
+            hard: [
+                () => {
+                    const travelDistance = (Math.floor(Math.random() * 6) + 3) * 1000;
+                    const travelTime = (Math.floor(Math.random() * 4) + 2) * 60;
+                    return {
+                        text: `Egy jármű ${travelDistance / 1000} km-t tesz meg ${travelTime} perc alatt. Mennyi az átlagsebessége km/h-ban?`,
+                        data: {},
+                        inputs: [
+                            { name: 'Jármű útja', correct: travelDistance / 1000, unit: 'km' },
+                            { name: 'Jármű menetideje', correct: travelTime, unit: 'perc' }
+                        ],
+                        target: travelDistance / 1000 / (travelTime / 60), unit: 'km/h',
+                        label: 'A jármű átlagsebessége km/h-ban:',
+                        hint: 'Váltsd a perceket órára, majd oszd el az utat az idővel.'
+                    };
+                },
+                () => {
+                    const time = Math.floor(Math.random() * 5) + 2;
+                    const fallenDistance = 5 * time * time;
+                    return {
+                        text: `Egy test nyugalomból indulva ${time} s-ig szabadesik. Mekkora az esési útja, és körülbelül mekkora a sebessége a végén? A választ az esési útra add meg!`,
+                        data: {},
+                        inputs: [{ name: 'Esési idő', correct: time, unit: 's' }],
+                        target: fallenDistance, unit: 'm', label: 'Esési út méterben:',
+                        hint: 'Használd az s ≈ 5 · t² összefüggést; a végsebesség közelítőleg 10 · t.'
+                    };
+                },
+                () => {
+                    const firstDistance = (Math.floor(Math.random() * 4) + 2) * 1000;
+                    const secondDistance = (Math.floor(Math.random() * 4) + 2) * 1000;
+                    const firstTime = (Math.floor(Math.random() * 3) + 1) * 60;
+                    const secondTime = (Math.floor(Math.random() * 3) + 1) * 60;
+                    return {
+                        text: `Egy kiránduló először ${firstDistance / 1000} km-t tesz meg ${firstTime / 60} perc alatt, majd ${secondDistance / 1000} km-t ${secondTime / 60} perc alatt. Mennyi a teljes út átlagsebessége km/h-ban?`,
+                        data: {},
+                        inputs: [
+                            { name: 'Első útszakasz', correct: firstDistance / 1000, unit: 'km' },
+                            { name: 'Első időtartam', correct: firstTime / 60, unit: 'óra' },
+                            { name: 'Második útszakasz', correct: secondDistance / 1000, unit: 'km' },
+                            { name: 'Második időtartam', correct: secondTime / 60, unit: 'óra' }
+                        ],
+                        target: (firstDistance + secondDistance) / 1000 / ((firstTime + secondTime) / 3600),
+                        unit: 'km/h', label: 'Átlagsebesség km/h-ban:',
+                        hint: 'Add össze a két útszakaszt és a két időtartamot; az átlagsebesség a teljes út osztva a teljes idővel.'
+                    };
+                },
+                () => ({
+                    text: 'Egy busz hirtelen fékez. Miért billenhetnek előre az utasok, és mi segít megvédeni őket?',
+                    data: {},
+                    inputs: [],
+                    choices: [
+                        'A tehetetlenség miatt az utasok mozgásállapota változatlan maradna; a biztonsági öv segít.',
+                        'A busz fékezése megszünteti a gravitációt.',
+                        'Az utasok tömege fékezéskor nullára csökken.'
+                    ],
+                    target: 0,
+                    hint: 'A testek nem változtatják meg maguktól a mozgásukat; a biztonsági öv erőhatást biztosít.'
+                }),
+                () => ({
+                    text: 'Egy kerékpáros egyenletesen halad sík úton. Melyik leírás illik erre a mozgásra?',
+                    data: {},
+                    inputs: [],
+                    choices: [
+                        'A hajtó és a lassító hatások kiegyenlítik egymást, a sebesség nem változik.',
+                        'A sebesség minden másodpercben nő.',
+                        'A kerékpárosra semmilyen hatás nem hat.'
+                    ],
+                    target: 0,
+                    hint: 'Egyenletes mozgásnál a sebesség állandó; a lassító hatásokat ellensúlyozhatja a hajtás.'
+                })
+            ]
+        }
     };
 
     window.onload = function() {
@@ -315,6 +531,7 @@
         document.getElementById('retry-count').innerText = 'Próbálkozások: 0';
         document.getElementById('feedback-box').className = 'feedback';
         document.getElementById('student-answer').value = '';
+        document.getElementById('student-choice').value = '';
         document.querySelector('#problem-card button').disabled = false;
 
         const diff = document.getElementById('difficulty-select').value;
@@ -331,16 +548,28 @@
             badge.className = 'badge badge-hard';
         }
 
-        const templates = problemTemplates[diff];
+        const topic = document.getElementById('topic-select').value;
+        const templates = problemTemplates[topic][diff];
         currentProblem = templates[Math.floor(Math.random() * templates.length)]();
 
         document.getElementById('problem-text').innerText = currentProblem.text;
-        document.getElementById('answer-label').innerText = currentProblem.label;
+        const hasChoices = Array.isArray(currentProblem.choices);
+        document.getElementById('choice-answer-container').style.display = hasChoices ? 'block' : 'none';
+        document.getElementById('number-answer-container').style.display = hasChoices ? 'none' : 'block';
+        if (hasChoices) {
+            const choiceSelect = document.getElementById('student-choice');
+            choiceSelect.replaceChildren(new Option('Válassz...', ''));
+            currentProblem.choices.forEach((choice, index) => {
+                choiceSelect.add(new Option(choice, index));
+            });
+        } else {
+            document.getElementById('answer-label').innerText = currentProblem.label;
+        }
 
         const easyBox = document.getElementById('easy-data-container');
         const medHardBox = document.getElementById('medium-hard-data-container');
 
-        if (diff === 'easy') {
+        if (diff === 'easy' && Object.keys(currentProblem.data || {}).length > 0) {
             easyBox.style.display = 'block';
             medHardBox.style.display = 'none';
             let html = '';
@@ -348,7 +577,7 @@
                 html += `<div>• ${k} = ${currentProblem.data[k]}</div>`;
             }
             document.getElementById('easy-data-list').innerHTML = html;
-        } else {
+        } else if (diff !== 'easy' && currentProblem.inputs.length > 0) {
             easyBox.style.display = 'none';
             medHardBox.style.display = 'block';
             let html = '';
@@ -359,6 +588,9 @@
                          </div>`;
             });
             document.getElementById('data-inputs').innerHTML = html;
+        } else {
+            easyBox.style.display = 'none';
+            medHardBox.style.display = 'none';
         }
     }
 
@@ -383,13 +615,18 @@
         }
 
         const answer = parseFloat(document.getElementById('student-answer').value);
-        if (isNaN(answer) || Math.abs(answer - currentProblem.target) > Math.max(0.05, Math.abs(currentProblem.target) * 0.001)) {
+        const isCorrect = Array.isArray(currentProblem.choices)
+            ? document.getElementById('student-choice').value === String(currentProblem.target)
+            : !isNaN(answer) && Math.abs(answer - currentProblem.target) <= Math.max(0.05, Math.abs(currentProblem.target) * 0.001);
+        if (!isCorrect) {
             feedback.className = 'feedback error';
             feedback.innerText = `❌ Még nem pontos. ${currentProblem.hint} Próbáld újra!`;
             saveAttemptStats(currentStudent, diff, false);
         } else {
             feedback.className = 'feedback success';
-            feedback.innerText = `🎉 Helyes megoldás: ${currentProblem.target} ${currentProblem.unit}. Szép munka!`;
+            feedback.innerText = Array.isArray(currentProblem.choices)
+                ? '🎉 Helyes válasz! Szép munka!'
+                : `🎉 Helyes megoldás: ${currentProblem.target} ${currentProblem.unit}. Szép munka!`;
             alreadySolved = true;
             document.querySelector('#problem-card button').disabled = true;
             saveAttemptStats(currentStudent, diff, true);
