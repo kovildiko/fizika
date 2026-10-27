@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8. Osztályos Fizika Gyakorló Portál</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #d97706;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 { margin: 0; color: var(--primary); font-size: 1.5rem; }
+
+        .card {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background: var(--primary-hover); }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-easy { background: var(--success); }
+        .badge-medium { background: var(--warning); }
+        .badge-hard { background: var(--error); }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: none;
+        }
+        .feedback.success { background: #dcfce7; color: var(--success); display: block; }
+        .feedback.error { background: #fee2e2; color: var(--error); display: block; }
+
+        .data-box {
+            background: #e2e8f0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>⚡ Fizika Gyakorló Portál (8. Osztály)</h1>
+        <span id="user-display" style="font-weight: bold; color: #64748b;"></span>
+    </div>
+
+    <!-- DIÁK FELÜLET -->
+    <div id="student-tab">
+        <div id="login-section" class="card">
+            <h3>Kérlek, add meg a neved a gyakorlás kezdéséhez:</h3>
+            <div class="form-group">
+                <input type="text" id="student-name" placeholder="Teljes név (pl. Kovács Péter)">
+            </div>
+            <button class="btn" onclick="registerStudent()">Gyakorlás indítása</button>
+        </div>
+
+        <div id="practice-section" style="display:none;">
+            <div class="card">
+                <div class="form-group">
+                    <label>Válassz nehézségi szintet:</label>
+                    <select id="difficulty-select" onchange="generateProblem()">
+                        <option value="easy">🟢 Könnyű (Adatok kiírva)</option>
+                        <option value="medium" selected>🟡 Közepes (Adatkiírás + Számolás)</option>
+                        <option value="hard">🔴 Nehéz (Átváltás + Számolás)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="generateProblem()" style="background:#475569;">🔄 Új feladat kérése</button>
+            </div>
+
+            <div class="card" id="problem-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span id="problem-badge" class="badge"></span>
+                    <span id="retry-count" style="font-size:0.9rem; color:#64748b;">Próbálkozások: 0</span>
+                </div>
+                <p id="problem-text" style="font-size:1.1rem; line-height:1.5;"></p>
+
+                <!-- KÖNNYŰ SZINT: ELŐRE KIÍRT ADATOK -->
+                <div id="easy-data-container" class="data-box" style="display:none;">
+                    <strong>Megadott adatok a feladatból:</strong>
+                    <div id="easy-data-list"></div>
+                </div>
+
+                <!-- KÖZEPES ÉS NEHÉZ SZINT: DIÁK ADATKÍRÁSA -->
+                <div id="medium-hard-data-container" style="display:none; margin-top:15px; border-top:1px solid #cbd5e1; padding-top:15px;">
+                    <h4>1. Adatok kigyűjtése a szövegből:</h4>
+                    <div id="data-inputs"></div>
+                </div>
+
+                <div style="margin-top:15px; border-top:1px solid #cbd5e1; padding-top:15px;">
+                    <h4>2. Számítsd ki a végeredményt:</h4>
+                    <div class="form-group">
+                        <label id="answer-label">Végeredmény:</label>
+                        <input type="number" step="any" id="student-answer" placeholder="Írd be a kiszámolt értéket...">
+                    </div>
+                </div>
+
+                <button class="btn" onclick="checkAnswer()">Válasz ellenőrzése</button>
+                <div id="feedback-box" class="feedback"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentStudent = localStorage.getItem('currentStudent') || '';
+    let currentProblem = null;
+    let attempts = 0;
+
+    const problemTemplates = [
+        {
+            type: 'ohm',
+            title: 'Ohm-törvénye (Feszültség és Áramerősség)',
+            gen: (diff) => {
+                let U = Math.floor(Math.random() * 20 + 1) * 10;
+                let R = Math.floor(Math.random() * 10 + 1) * 5;
+                let I = U / R;
+
+                if (diff === 'easy') {
+                    return {
+                        text: `Egy elektromos fűtőtest ellenállása R = ${R} Ω. Mekkora áramerősség folyik át rajta, ha U = ${U} V feszültségre csatlakoztatjuk?`,
+                        data: { U: U, R: R },
+                        inputs: [],
+                        target: I,
+                        unit: 'A',
+                        label: 'Áramerősség (I) amperben:'
+                    };
+                } else if (diff === 'medium') {
+                    return {
+                        text: `Egy áramkörben lévő fogyasztó ellenállása ${R} Ω. A mérőműszer szerint ${U} V feszültség kapcsolódik rá. Számítsd ki az áramerősséget!`,
+                        data: {},
+                        inputs: [
+                            { key: 'U', name: 'Feszültség (U)', correct: U, unit: 'V' },
+                            { key: 'R', name: 'Ellenállás (R)', correct: R, unit: 'Ω' }
+                        ],
+                        target: I,
+                        unit: 'A',
+                        label: 'Kiszámított áramerősség (I) A-ben:'
+                    };
+                } else {
+                    let I_mA = I * 1000;
+                    return {
+                        text: `Egy elektronikai alkatrészen ${U} V feszültség hatására ${I_mA} mA áramerősség folyik át. Számítsd ki az alkatrész ellenállását! (Figyelj a mértékegység-átváltásra!)`,
+                        data: {},
+                        inputs: [
+                            { key: 'U', name: 'Feszültség (U)', correct: U, unit: 'V' },
+                            { key: 'I', name: 'Áramerősség A-ben (I)', correct: I, unit: 'A' }
+                        ],
+                        target: R,
+                        unit: 'Ω',
+                        label: 'Kiszámított ellenállás (R) Ω-ban:'
+                    };
+                }
+            }
+        },
+        {
+            type: 'power',
+            title: 'Elektromos Teljesítmény',
+            gen: (diff) => {
+                let U = 230;
+                let I = Math.floor(Math.random() * 10 + 1);
+                let P = U * I;
+
+                if (diff === 'easy') {
+                    return {
+                        text: `Egy háztartási eszköz a 230 V-os hálózatra kapcsolva ${I} A áramot vesz fel. Mekkora az elektromos teljesítménye?`,
+                        data: { U: 230, I: I },
+                        inputs: [],
+                        target: P,
+                        unit: 'W',
+                        label: 'Teljesítmény (P) Wattban:'
+                    };
+                } else if (diff === 'medium') {
+                    return {
+                        text: `A konyhai vízforraló 230 V-os feszültségen működik, és ${I} A áramerősséget vesz fel a hálózatból. Mekkora a készülék teljesítménye?`,
+                        data: {},
+                        inputs: [
+                            { key: 'U', name: 'Feszültség (U)', correct: 230, unit: 'V' },
+                            { key: 'I', name: 'Áramerősség (I)', correct: I, unit: 'A' }
+                        ],
+                        target: P,
+                        unit: 'W',
+                        label: 'Kiszámított teljesítmény (P) W-ban:'
+                    };
+                } else {
+                    let P_kW = P / 1000;
+                    return {
+                        text: `Egy elektromos sütő teljesítménye ${P_kW} kW. Mekkora áramot vesz fel a hálózatból, ha a hálózati feszültség 230 V?`,
+                        data: {},
+                        inputs: [
+                            { key: 'P', name: 'Teljesítmény W-ban (P)', correct: P, unit: 'W' },
+                            { key: 'U', name: 'Feszültség (U)', correct: 230, unit: 'V' }
+                        ],
+                        target: I,
+                        unit: 'A',
+                        label: 'Kiszámított áramerősség (I) A-ben:'
+                    };
+                }
+            }
+        }
+    ];
+
+    window.onload = function() {
+        if (currentStudent) {
+            showPractice();
+        }
+    };
+
+    function registerStudent() {
+        const name = document.getElementById('student-name').value.trim();
+        if (!name) { alert('Kérlek, add meg a neved!'); return; }
+        currentStudent = name;
+        localStorage.setItem('currentStudent', currentStudent);
+        showPractice();
+    }
+
+    function showPractice() {
+        document.getElementById('user-display').innerText = '👤 Diák: ' + currentStudent;
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('practice-section').style.display = 'block';
+        generateProblem();
+    }
+
+    function generateProblem() {
+        attempts = 0;
+        document.getElementById('retry-count').innerText = 'Próbálkozások: 0';
+        document.getElementById('feedback-box').className = 'feedback';
+        document.getElementById('student-answer').value = '';
+
+        const diff = document.getElementById('difficulty-select').value;
+        const badge = document.getElementById('problem-badge');
+
+        if (diff === 'easy') {
+            badge.innerText = '🟢 Könnyű Szint';
+            badge.className = 'badge badge-easy';
+        } else if (diff === 'medium') {
+            badge.innerText = '🟡 Közepes Szint';
+            badge.className = 'badge badge-medium';
+        } else {
+            badge.innerText = '🔴 Nehéz Szint';
+            badge.className = 'badge badge-hard';
+        }
+
+        const template = problemTemplates[Math.floor(Math.random() * problemTemplates.length)];
+        currentProblem = template.gen(diff);
+
+        document.getElementById('problem-text').innerText = currentProblem.text;
+        document.getElementById('answer-label').innerText = currentProblem.label;
+
+        const easyBox = document.getElementById('easy-data-container');
+        const medHardBox = document.getElementById('medium-hard-data-container');
+
+        if (diff === 'easy') {
+            easyBox.style.display = 'block';
+            medHardBox.style.display = 'none';
+            let html = '';
+            for (let k in currentProblem.data) {
+                html += `<div>• ${k} =${currentProblem.data[k]}</div>`;
+            }
+            document.getElementById('easy-data-list').innerHTML = html;
+        } else {
+            easyBox.style.display = 'none';
+            medHardBox.style.display = 'block';
+            let html = '';
+            currentProblem.inputs.forEach((inp, idx) => {
+                html += `<div class="form-group">
