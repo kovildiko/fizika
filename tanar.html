@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fizika Tanári Műszerfal</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --error: #dc2626;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 { margin: 0; color: var(--primary); font-size: 1.5rem; }
+
+        .card {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background: var(--primary-hover); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th { background: #f8fafc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>📊 Tanári Műszerfal</h1>
+        <span style="font-weight: bold; color: #64748b;">🔒 Biztonságos Admin Felület</span>
+    </div>
+
+    <!-- TANÁRI BELÉPÉS -->
+    <div id="teacher-login" class="card">
+        <h3>Tanári belépés</h3>
+        <div class="form-group">
+            <input type="password" id="teacher-pin" placeholder="Tanári PIN kód (Alapértelmezett: 1234)">
+        </div>
+        <button class="btn" onclick="verifyTeacher()">Belépés Műszerfalra</button>
+    </div>
+
+    <!-- TANÁRI MŰSZERFAL -->
+    <div id="teacher-dashboard" style="display:none;">
+        <h3>📊 Diákok haladása és eredményei</h3>
+        <p>Az alábbi táblázat mutatja a diákok által sikeresen megoldott feladatok számát nehézségi szintekre bontva, valamint az újrapróbálkozásokat.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Diák Neve</th>
+                    <th>🟢 Könnyű</th>
+                    <th>🟡 Közepes</th>
+                    <th>🔴 Nehéz</th>
+                    <th>Összesen</th>
+                    <th>Újrapróbálkozások</th>
+                </tr>
+            </thead>
+            <tbody id="stats-table-body">
+            </tbody>
+        </table>
+        <br>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" onclick="exportCSV()" style="background:#16a34a;">📥 Adatok letöltése (CSV)</button>
+            <button class="btn" onclick="clearData()" style="background:#dc2626;">🗑️ Adatok törlése</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function verifyTeacher() {
+        const pin = document.getElementById('teacher-pin').value;
+        if (pin === '1234') {
+            document.getElementById('teacher-login').style.display = 'none';
+            document.getElementById('teacher-dashboard').style.display = 'block';
+            loadTeacherStats();
+        } else {
+            alert('Hibás PIN kód! (Alapértelmezett: 1234)');
+        }
+    }
+
+    function loadTeacherStats() {
+        let stats = JSON.parse(localStorage.getItem('physics_stats') || '{}');
+        const tbody = document.getElementById('stats-table-body');
+        tbody.innerHTML = '';
+
+        for (let student in stats) {
+            let s = stats[student];
+            let total = s.easy + s.medium + s.hard;
+            let row = `<tr>
+                <td><strong>${student}</strong></td>
+                <td>${s.easy}</td>
+                <td>${s.medium}</td>
+                <td>${s.hard}</td>
+                <td><strong style="color:var(--primary);">${total}</strong></td>
+                <td><span style="color:var(--error);">${s.retries || 0}</span></td>
+            </tr>`;
+            tbody.innerHTML += row;
+        }
+    }
+
+    function exportCSV() {
+        let stats = JSON.parse(localStorage.getItem('physics_stats') || '{}');
+        let csv = 'Diak Neve,Konnyu,Kozepes,Nehez,Osszesen,Ujraprobalkozasok\n';
+        for (let student in stats) {
+            let s = stats[student];
+            csv += `"${student}",${s.easy},${s.medium},${s.hard},${s.easy+s.medium+s.hard},${s.retries || 0}\n`;
+        }
+        let blob = new Blob([csv], { type: 'text/csv' });
+        let a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'fizika_haladas_eredmenyek.csv';
+        a.click();
+    }
+
+    function clearData() {
+        if (confirm('Biztosan törölni szeretnéd az összes diák eredményét?')) {
+            localStorage.removeItem('physics_stats');
+            loadTeacherStats();
+        }
+    }
+</script>
+
+</body>
+</html>
