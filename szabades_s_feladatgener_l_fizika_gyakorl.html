@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szabadesés Gyakorló – Interaktív Fizika Feladatgeneráló</title>
+    <!-- Tailwind CSS betöltése -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- MathJax a szép matematikai képletekhez -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        /* Sima átmenetek és egyedi fókusz stílusok */
+        .input-number::-webkit-inner-spin-button,
+        .input-number::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .input-number {
+            -moz-appearance: textfield;
+        }
+        .fade-in {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Felső navigációs sáv -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                    <!-- Zuhanás / vektor ikon SVG -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Szabadesés Gyakorló</h1>
+                    <p class="text-xs text-slate-500 font-medium">Középiskolai fizika feladatgeneráló</p>
+                </div>
+            </div>
+
+            <!-- Nehézségi fokozat választó és g beállítás -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs font-semibold">
+                    <span class="px-2 text-slate-500 hidden sm:inline">g =</span>
+                    <button type="button" id="btn-g-10" onclick="setGravity(10)" class="px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm transition-all">10 m/s²</button>
+                    <button type="button" id="btn-g-981" onclick="setGravity(9.81)" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition-all">9,81 m/s²</button>
+                </div>
+
+                <button type="button" onclick="toggleFormulaSheet()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors">
+                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span>Képletek</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Fő tartalom -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+
+        <!-- Lenyitható Képletgyűjtemény / Puskázó panel -->
+        <section id="formula-panel" class="hidden bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden fade-in">
+            <div class="bg-indigo-50/70 px-5 py-3 border-b border-indigo-100 flex items-center justify-between">
+                <h2 class="text-sm font-bold text-indigo-950 uppercase tracking-wider">Képletgyűjtemény (A légellenállást elhanyagoljuk)</h2>
+                <button type="button" onclick="toggleFormulaSheet()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div class="font-semibold text-emerald-700 mb-1.5 text-xs uppercase tracking-wide">1. Szabadesés ($v_0 = 0$)</div>
+                    <ul class="space-y-1.5 text-slate-700">
+                        <li>Sebesség: $v = g \cdot t$</li>
+                        <li>Megtett út: $h = \frac{g}{2} \cdot t^2$</li>
+                        <li>Idő magasságból: $t = \sqrt{\frac{2h}{g}}$</li>
+                        <li>Sebesség magasságból: $v = \sqrt{2gh}$</li>
+                    </ul>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div class="font-semibold text-amber-700 mb-1.5 text-xs uppercase tracking-wide">2. Lefelé hajítás ($v_0 > 0$)</div>
+                    <ul class="space-y-1.5 text-slate-700">
+                        <li>Sebesség: $v = v_0 + g \cdot t$</li>
+                        <li>Megtett út: $h = v_0 \cdot t + \frac{g}{2} \cdot t^2$</li>
+                        <li>Magasság $H$-ról: $y(t) = H - h$</li>
+                        <li>Sebesség-út összefüggés: $v^2 = v_0^2 + 2gh$</li>
+                    </ul>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div class="font-semibold text-rose-700 mb-1.5 text-xs uppercase tracking-wide">3. Felfelé hajítás ($v_0$ felfelé)</div>
+                    <ul class="space-y-1.5 text-slate-700">
+                        <li>Emelkedési idő: $t_{\text{fel}} = \frac{v_0}{g}$</li>
+                        <li>Emelkedési magasság: $h_{\text{max}} = \frac{v_0^2}{2g}$</li>
+                        <li>Elmozdulás (felfelé +): $\Delta y = v_0 t - \frac{g}{2} t^2$</li>
+                        <li>Utolsó mp útja: $\Delta h_n = h(t) - h(t-1)$</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Haladáskövető sáv -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-medium text-slate-500">Összes megoldott</span>
+                <div class="mt-1 flex items-baseline gap-2">
+                    <span id="stat-total" class="text-2xl font-extrabold text-slate-900">0</span>
+                    <span class="text-xs text-slate-400">feladat</span>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-medium text-emerald-700">1. szint (Alap)</span>
+                <div class="mt-1 flex items-baseline gap-2">
+                    <span id="stat-lvl-1" class="text-2xl font-extrabold text-emerald-600">0</span>
+                    <span class="text-xs text-slate-400">sikeres</span>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-medium text-amber-700">2. szint (Közép)</span>
+                <div class="mt-1 flex items-baseline gap-2">
+                    <span id="stat-lvl-2" class="text-2xl font-extrabold text-amber-600">0</span>
+                    <span class="text-xs text-slate-400">sikeres</span>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-medium text-rose-700">3. szint (Haladó)</span>
+                <div class="mt-1 flex items-baseline gap-2">
+                    <span id="stat-lvl-3" class="text-2xl font-extrabold text-rose-600">0</span>
+                    <span class="text-xs text-slate-400">sikeres</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Nehézségi szint választó fülek (Emojik nélkül, tiszta tipográfiával és színkódokkal) -->
+        <section class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-3 gap-2">
+            <button type="button" id="tab-lvl-1" onclick="selectLevel(1)" class="level-tab py-3 px-3 sm:px-4 rounded-xl text-left transition-all border-2 border-emerald-500 bg-emerald-50/70">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span class="font-bold text-sm sm:text-base text-emerald-950">1. szint – Alap</span>
+                </div>
+                <p class="text-xs text-emerald-800/80 mt-0.5 hidden sm:block">Közvetlen képletalkalmazás ($v_0 = 0$)</p>
+            </button>
+
+            <button type="button" id="tab-lvl-2" onclick="selectLevel(2)" class="level-tab py-3 px-3 sm:px-4 rounded-xl text-left transition-all border-2 border-transparent hover:bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+                    <span class="font-bold text-sm sm:text-base text-slate-800">2. szint – Közép</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5 hidden sm:block">Fordított számítás, lefelé hajítás</p>
+            </button>
+
+            <button type="button" id="tab-lvl-3" onclick="selectLevel(3)" class="level-tab py-3 px-3 sm:px-4 rounded-xl text-left transition-all border-2 border-transparent hover:bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+                    <span class="font-bold text-sm sm:text-base text-slate-800">3. szint – Haladó</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5 hidden sm:block">Utolsó másodperc, találkozás, felfelé dobás</p>
+            </button>
+        </section>
+
+        <!-- Aktuális Feladat Kártya -->
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <!-- Feladat fejléc -->
+            <div class="px-5 sm:px-7 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/60">
+                <div class="flex items-center gap-2.5">
+                    <span id="problem-badge" class="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">1. szint • Alap</span>
+                    <span id="problem-category" class="text-xs font-medium text-slate-500">Szabadesés alapjai</span>
+                </div>
+                <div class="text-xs font-semibold text-slate-600 bg-white px-2.5 py-1 rounded-md border border-slate-200">
+                    $g = <span id="display-g">10</span>\text{ m/s}^2$
+                </div>
+            </div>
+
+            <!-- Feladat szövege -->
+            <div class="p-5 sm:p-7 space-y-6">
+                <div class="bg-slate-50/90 p-5 rounded-xl border border-slate-200/80">
+                    <p id="problem-text" class="text-base sm:text-lg text-slate-800 leading-relaxed font-medium">
+                        Betöltés...
+                    </p>
+                    <p class="text-xs text-slate-500 mt-3">
+                        A közegellenállástól tekintsünk el! A válaszokat legalább egy vagy két tizedesjegy pontossággal add meg (tűréshatár: ±2%).
+                    </p>
+                </div>
+
+                <!-- Válasz beviteli mezők -->
+                <form id="answer-form" onsubmit="event.preventDefault(); checkAnswers();" class="space-y-4">
+                    <div id="inputs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Dinamikusan generált beviteli mezők -->
+                    </div>
+
+                    <!-- Visszajelző üzenet doboz -->
+                    <div id="feedback-box" class="hidden rounded-xl p-4 border text-sm font-medium fade-in"></div>
+
+                    <!-- Akciógombok -->
+                    <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+                        <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                            <button type="submit" id="btn-check" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm shadow-sm transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Ellenőrzés</span>
+                            </button>
+
+                            <button type="button" onclick="toggleSolution()" id="btn-solution" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-all">
+                                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                                <span id="btn-solution-text">Levezetés megtekintése</span>
+                            </button>
+                        </div>
+
+                        <button type="button" onclick="generateNewProblem()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-slate-800 font-semibold text-sm transition-all">
+                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>Új feladat</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Részletes, lépésről lépésre levezetés panel -->
+                <div id="solution-box" class="hidden mt-4 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden fade-in">
+                    <div class="px-5 py-3 bg-slate-100/80 border-b border-slate-200 flex items-center justify-between">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700">Lépésről lépésre megoldás</h3>
+                        <span class="text-xs text-slate-500">Részletes levezetés</span>
+                    </div>
+                    <div id="solution-content" class="p-5 space-y-4 text-sm text-slate-800 leading-relaxed">
+                        <!-- Dinamikus megoldás tartalom -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Lábléc -->
+    <footer class="border-t border-slate-200 bg-white py-4 mt-8">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+            <span>Kinematika – Egyenletesen változó mozgás a nehézségi erőtérben</span>
+            <button type="button" onclick="resetStats()" class="text-slate-400 hover:text-rose-600 underline transition-colors">Statisztika nullázása</button>
+        </div>
+    </footer>
+
+    <script>
+        // --- ÁLLAPOTKEZELÉS ---
+        let currentLevel = 1;
+        let g = 10;
+        let currentProblem = null;
+        let isProblemSolved = false;
+        let stats = {
+            1: 0,
+            2: 0,
+            3: 0
+        };
+
+        // Mentett statisztika betöltése localStorage-ból
+        function loadStats() {
+            try {
+                const saved = localStorage.getItem('szabadeses_stats_v1');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    stats = { 1: parsed[1] || 0, 2: parsed[2] || 0, 3: parsed[3] || 0 };
+                }
+            } catch (e) {
+                console.warn('Nem sikerült a statisztika betöltése:', e);
+            }
+            updateStatsUI();
+        }
+
+        function saveStats() {
+            try {
+                localStorage.setItem('szabadeses_stats_v1', JSON.stringify(stats));
+            } catch (e) {
+                console.warn('Nem sikerült a statisztika mentése:', e);
+            }
+            updateStatsUI();
+        }
+
+        function updateStatsUI() {
+            document.getElementById('stat-lvl-1').textContent = stats[1];
+            document.getElementById('stat-lvl-2').textContent = stats[2];
+            document.getElementById('stat-lvl-3').textContent = stats[3];
+            document.getElementById('stat-total').textContent = stats[1] + stats[2] + stats[3];
+        }
+
+        function resetStats() {
+            stats = { 1: 0, 2: 0, 3: 0 };
+            saveStats();
+        }
+
+        // --- SEGÉDFÜGGVÉNYEK ---
+        function randInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function randFloat(min, max, decimals = 1) {
+            const val = Math.random() * (max - min) + min;
+            return Number(val.toFixed(decimals));
+        }
+
+        function pickRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        // Magyar tizedesvesszős formázás megjelenítéshez
+        function fmt(num, decimals = 2) {
+            if (Number.isInteger(num)) return num.toString();
+            const fixed = Number(num.toFixed(decimals));
+            return fixed.toString().replace('.', ',');
+        }
+
+        // Felhasználói bevitel értelmezése (vessző és pont támogatása)
+        function parseUserNumber(str) {
+            if (!str || typeof str !== 'string') return NaN;
+            const cleaned = str.trim().replace(',', '.');
+            return parseFloat(cleaned);
+        }
+
+        function typesetMath() {
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise().catch((err) => console.log('MathJax hiba:', err));
+            }
+        }
+
+        // --- UI VEZÉRLŐK ---
+        function setGravity(newG) {
+            g = newG;
+            const btn10 = document.getElementById('btn-g-10');
+            const btn981 = document.getElementById('btn-g-981');
+            document.getElementById('display-g').textContent = g === 10 ? '10' : '9,81';
+
+            if (g === 10) {
+                btn10.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm transition-all';
+                btn981.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition-all';
+            } else {
+                btn981.className = 'px-2.5 py-1 rounded-md bg-white text-indigo-700 shadow-sm transition-all';
+                btn10.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition-all';
+            }
+            generateNewProblem();
+        }
+
+        function toggleFormulaSheet() {
+            const panel = document.getElementById('formula-panel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                typesetMath();
+            }
+        }
+
+        function toggleSolution() {
+            const box = document.getElementById('solution-box');
+            const btnText = document.getElementById('btn-solution-text');
+            box.classList.toggle('hidden');
+            if (box.classList.contains('hidden')) {
+                btnText.textContent = 'Levezetés megtekintése';
+            } else {
+                btnText.textContent = 'Levezetés elrejtése';
+                typesetMath();
+            }
+        }
+
+        function selectLevel(level) {
+            currentLevel = level;
+            const tabs = [1, 2, 3];
+            const styles = {
+                1: {
+                    active: 'level-tab py-3 px-3 sm:px-4 rounded-xl text-left transition-all border-2 border-emerald-500 bg-emerald-50/70',
+                    badge: 'px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800',
+                    badgeText: '1. szint • Alap'
+                },
+                2: {
+                    active: 'level-tab py-3 px-3 sm:px-4 rounded-xl text-left transition-all border-2 border-amber-500 bg-amber-50/70',
+                    badge: 'px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800',
+                    badgeText: '2. szint • Közép'
+                },
+                3: {
+                    active: 'level-tab py-3 px-3 sm:px-4 rounded-xl text-left transition-all border-2 border-rose-500 bg-rose-50/70',
+                    badge: 'px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-rose-100 text-rose-800',
+                    badgeText: '3. szint • Haladó'
+                }
+            };
+
+            tabs.forEach(lvl => {
+                const el = document.getElementById(`tab-lvl-${lvl}`);
+                if (lvl === level) {
+                    el.className = styles[lvl].active;
+                } else {
+                    el.className = 'level-tab py-3 px-3 sm:px-4 rounded-xl text-left transition-all border-2 border-transparent hover:bg-slate-50';
+                }
+            });
+
+            const badge = document.getElementById('problem-badge');
+            badge.className = styles[level].badge;
+            badge.textContent = styles[level].badgeText;
+
+            generateNewProblem();
+        }
+
+        // --- FELADATGENERÁTOROK SZINTENKÉNT ---
+
+        // 1. SZINT (ALAP): Közvetlen képletalkalmazás (v = g*t, h = g/2 * t^2)
+        function generateLevel1() {
+            const type = randInt(1, 3);
+            const gStr = fmt(g);
+
+            if (type === 1) {
+                // Adott az idő -> kérdezzük a megtett utat ÉS a becsapódási sebességet
+                const t = randFloat(1.5, 6.0, 1);
+                const h = 0.5 * g * t * t;
+                const v = g * t;
+
+                const scenarios = [
+                    `Egy mély kútba ejtünk egy kavicsot kezdősebesség nélkül. A csobbanást $${fmt(t)}\\text{ s}$ múlva halljuk meg (a hang terjedési idejétől eltekintünk). Milyen mély a kút, és mekkora sebességgel éri el a kavics a víz felszínét?`,
+                    `Egy magas sziklaperemről kezdősebesség nélkül leejtünk egy követ, amely $${fmt(t)}\\text{ s}$ alatt ér földet. Milyen magasról esett le a kő, és mekkora a becsapódási sebessége?`,
+                    `Egy elhagyatott gyárkémény tetejéről elejtett csavar $${fmt(t)}\\text{ s}$ múlva csapódik a talajba. Határozd meg a kémény magasságát és a csavar becsapódási sebességét!`
+                ];
+
+                return {
+                    category: 'Szabadesés időből',
+                    text: pickRandom(scenarios),
+                    inputs: [
+                        { id: 'h', label: 'Megtett út / magasság ($h$)', unit: 'm', answer: h },
+                        { id: 'v', label: 'Becsapódási sebesség ($v$)', unit: 'm/s', answer: v }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Adatok:</p>
+                            <p>$t = ${fmt(t)}\\text{ s}$, $v_0 = 0\\text{ m/s}$, $g = ${gStr}\\text{ m/s}^2$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. Képletek és számítás:</p>
+                            <p>A megtett út (magasság): $$h = \\frac{g}{2} \\cdot t^2 = \\frac{${gStr}}{2} \\cdot (${fmt(t)})^2 = ${fmt(0.5 * g, 3)} \\cdot ${fmt(t * t, 2)} = \\mathbf{${fmt(h, 2)}\\text{ m}}$$</p>
+                            <p>A becsapódási sebesség: $$v = g \\cdot t = ${gStr} \\cdot ${fmt(t)} = \\mathbf{${fmt(v, 2)}\\text{ m/s}}$$</p>
+                        </div>
+                    `
+                };
+            } else if (type === 2) {
+                // Csak a megtett utat kérdezzük adott idő alatt (pl. ejtőernyős nyitás előtt)
+                const t = randFloat(2.0, 8.5, 1);
+                const h = 0.5 * g * t * t;
+
+                return {
+                    category: 'Megtett út számítása',
+                    text: `Egy ejtőernyős kiugrik egy lebegő helikopterből, és az első $${fmt(t)}\\text{ másodpercben}$ szabadon esik, mielőtt kinyitná az ernyőjét. Hány métert zuhan ez idő alatt?`,
+                    inputs: [
+                        { id: 'h', label: 'Zuhanás magassága ($h$)', unit: 'm', answer: h }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Adatok:</p>
+                            <p>$t = ${fmt(t)}\\text{ s}$, $g = ${gStr}\\text{ m/s}^2$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. Képlet és behelyettesítés:</p>
+                            <p>Szabadesésnél a megtett út az idő négyzetével arányos:</p>
+                            <p>$$h = \\frac{g}{2} \\cdot t^2 = \\frac{${gStr}}{2} \\cdot (${fmt(t)})^2 = \\mathbf{${fmt(h, 2)}\\text{ m}}$$</p>
+                        </div>
+                    `
+                };
+            } else {
+                // Sebesség számítása adott idő múlva
+                const t = randFloat(1.2, 5.5, 1);
+                const v = g * t;
+
+                return {
+                    category: 'Sebesség számítása',
+                    text: `Egy toronyház ablakából véletlenül kiesik egy virágcserép. Mekkora sebességgel mozog a cserép az esés megkezdése után $${fmt(t)}\\text{ s}$-mal, ha még nem ért földet?`,
+                    inputs: [
+                        { id: 'v', label: 'Pillanatnyi sebesség ($v$)', unit: 'm/s', answer: v }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Adatok:</p>
+                            <p>$t = ${fmt(t)}\\text{ s}$, $v_0 = 0\\text{ m/s}$, $g = ${gStr}\\text{ m/s}^2$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. Képlet és behelyettesítés:</p>
+                            <p>$$v = g \\cdot t = ${gStr} \\cdot ${fmt(t)} = \\mathbf{${fmt(v, 2)}\\text{ m/s}}$$</p>
+                        </div>
+                    `
+                };
+            }
+        }
+
+        // 2. SZINT (KÖZÉP): Fordított számítás (adott h -> t, v), lefelé hajítás, pillanatnyi magasság
+        function generateLevel2() {
+            const type = randInt(1, 3);
+            const gStr = fmt(g);
+
+            if (type === 1) {
+                // Fordított számítás: adott a magasság -> mennyi ideig esik és mekkora a sebessége?
+                const h = randInt(20, 125);
+                const t = Math.sqrt((2 * h) / g);
+                const v = g * t;
+
+                const scenarios = [
+                    `Egy $${h}\\text{ m}$ magas kilátótorony tetejéről kezdősebesség nélkül leejtünk egy acélgolyót. Mennyi ideig tart az esés, és mekkora sebességgel csapódik a talajba?`,
+                    `Egy $${h}\\text{ m}$ magas vízesés tetejéről lezúduló vízcseppek szabadon esnek a lenti medencébe. Mennyi idő alatt érnek le, és mekkora a sebességük a becsapódáskor?`
+                ];
+
+                return {
+                    category: 'Fordított számítás magasságból',
+                    text: pickRandom(scenarios),
+                    inputs: [
+                        { id: 't', label: 'Esési idő ($t$)', unit: 's', answer: t },
+                        { id: 'v', label: 'Becsapódási sebesség ($v$)', unit: 'm/s', answer: v }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Adatok:</p>
+                            <p>$h = ${h}\\text{ m}$, $g = ${gStr}\\text{ m/s}^2$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. Az esési idő meghatározása:</p>
+                            <p>A $h = \\frac{g}{2} \\cdot t^2$ képletből kifejezzük az időt:</p>
+                            <p>$$t = \\sqrt{\\frac{2h}{g}} = \\sqrt{\\frac{2 \\cdot ${h}}{${gStr}}} = \\sqrt{${fmt((2 * h) / g, 2)}} = \\mathbf{${fmt(t, 2)}\\text{ s}}$$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">3. A becsapódási sebesség:</p>
+                            <p>$$v = g \\cdot t = ${gStr} \\cdot ${fmt(t, 2)} = \\mathbf{${fmt(v, 2)}\\text{ m/s}}$$ (vagy $v = \\sqrt{2gh} = \\mathbf{${fmt(v, 2)}\\text{ m/s}}$)</p>
+                        </div>
+                    `
+                };
+            } else if (type === 2) {
+                // Lefelé hajítás adott kezdősebességgel
+                const v0 = randInt(4, 15);
+                const t = randFloat(1.5, 4.5, 1);
+                const h = v0 * t + 0.5 * g * t * t;
+                const v = v0 + g * t;
+
+                return {
+                    category: 'Függőleges hajítás lefelé',
+                    text: `Egy hídról függőlegesen lefelé elhajítunk egy követ $v_0 = ${v0}\\text{ m/s}$ kezdősebességgel. A kő $${fmt(t)}\\text{ s}$ múlva csapódik a folyóba. Milyen magasan van a híd a vízszint felett, és mekkora sebességgel éri el a kő a vizet?`,
+                    inputs: [
+                        { id: 'h', label: 'Híd magassága ($h$)', unit: 'm', answer: h },
+                        { id: 'v', label: 'Becsapódási sebesség ($v$)', unit: 'm/s', answer: v }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Adatok:</p>
+                            <p>$v_0 = ${v0}\\text{ m/s}$, $t = ${fmt(t)}\\text{ s}$, $g = ${gStr}\\text{ m/s}^2$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. Megtett út (híd magassága):</p>
+                            <p>$$h = v_0 \\cdot t + \\frac{g}{2} \\cdot t^2 = ${v0} \\cdot ${fmt(t)} + \\frac{${gStr}}{2} \\cdot (${fmt(t)})^2 = ${fmt(v0 * t, 2)} + ${fmt(0.5 * g * t * t, 2)} = \\mathbf{${fmt(h, 2)}\\text{ m}}$$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">3. Becsapódási sebesség:</p>
+                            <p>$$v = v_0 + g \\cdot t = ${v0} + ${gStr} \\cdot ${fmt(t)} = \\mathbf{${fmt(v, 2)}\\text{ m/s}}$$</p>
+                        </div>
+                    `
+                };
+            } else {
+                // Adott magasságból elejtve, t idő múlva milyen magasan van a talajtól?
+                const H = randInt(80, 180);
+                // Olyan t-t választunk, hogy még ne érjen földet
+                const maxT = Math.floor(Math.sqrt((2 * H) / g) - 0.5);
+                const t = Math.max(1.5, randFloat(1.5, Math.max(2, maxT), 1));
+                const fallen = 0.5 * g * t * t;
+                const y = H - fallen;
+
+                return {
+                    category: 'Pillanatnyi magasság meghatározása',
+                    text: `Egy $${H}\\text{ m}$ magasan lebegő hőlégballon kosarából kezdősebesség nélkül elejtenek egy homokzsákot. Milyen magasan van a zsák a talaj felett az elejtést követő $${fmt(t)}\\text{ s}$ múlva?`,
+                    inputs: [
+                        { id: 'y', label: 'Magasság a talajtól ($y$)', unit: 'm', answer: y }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Adatok:</p>
+                            <p>Kezdeti magasság: $H = ${H}\\text{ m}$, eltelt idő: $t = ${fmt(t)}\\text{ s}$, $g = ${gStr}\\text{ m/s}^2$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. Megtett út kiszámítása:</p>
+                            <p>$$h_{\\text{esett}} = \\frac{g}{2} \\cdot t^2 = \\frac{${gStr}}{2} \\cdot (${fmt(t)})^2 = ${fmt(fallen, 2)}\\text{ m}$$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">3. Talajtól mért magasság:</p>
+                            <p>$$y = H - h_{\\text{esett}} = ${H} - ${fmt(fallen, 2)} = \\mathbf{${fmt(y, 2)}\\text{ m}}$$</p>
+                        </div>
+                    `
+                };
+            }
+        }
+
+        // 3. SZINT (HALADÓ): Utolsó másodperc útja, két test találkozása/távolsága, felfelé hajítás magaslatról
+        function generateLevel3() {
+            const type = randInt(1, 3);
+            const gStr = fmt(g);
+
+            if (type === 1) {
+                // Az utolsó másodpercben megtett út problémája (adott az utolsó mp útja -> teljes esési idő és magasság)
+                // T legyen szép szám, pl. 3, 4, 5, 6 s
+                const T = randInt(3, 6);
+                const hTotal = 0.5 * g * T * T;
+                const hPrev = 0.5 * g * (T - 1) * (T - 1);
+                const deltaH = hTotal - hPrev;
+
+                return {
+                    category: 'Utolsó másodpercben megtett út',
+                    text: `Egy magas toronyból kezdősebesség nélkül elejtett test a becsapódás előtti utolsó másodpercben $${fmt(deltaH, 2)}\\text{ m}$ utat tesz meg. Mennyi ideig esett a test összesen, és milyen magasról ejtették el?`,
+                    inputs: [
+                        { id: 'T', label: 'Teljes esési idő ($T$)', unit: 's', answer: T },
+                        { id: 'H', label: 'Torony magassága ($H$)', unit: 'm', answer: hTotal }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Gondolatmenet és egyenlet felírása:</p>
+                            <p>Jelölje $T$ a teljes esési időt! Az utolsó másodpercben megtett út a $T$ idő alatt megtett teljes út és a $(T - 1)\\text{ s}$ alatt megtett út különbsége:</p>
+                            <p>$$\\Delta h = h(T) - h(T - 1) = \\frac{g}{2} T^2 - \\frac{g}{2} (T - 1)^2$$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. A teljes esési idő ($T$) kiszámítása:</p>
+                            <p>$$${fmt(deltaH, 2)} = \\frac{${gStr}}{2} \\cdot \\left[ T^2 - (T^2 - 2T + 1) \\right] = ${fmt(0.5 * g, 3)} \\cdot (2T - 1)$$</p>
+                            <p>$$2T - 1 = \\frac{${fmt(deltaH, 2)}}{${fmt(0.5 * g, 3)}} = ${fmt(deltaH / (0.5 * g), 2)} \\implies 2T = ${fmt(2 * T, 2)} \\implies T = \\mathbf{${T}\\text{ s}}$$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">3. A torony magassága ($H$):</p>
+                            <p>$$H = \\frac{g}{2} \\cdot T^2 = \\frac{${gStr}}{2} \\cdot ${T}^2 = \\mathbf{${fmt(hTotal, 2)}\\text{ m}}$$</p>
+                        </div>
+                    `
+                };
+            } else if (type === 2) {
+                // Függőleges hajítás felfelé egy magas épület tetejéről
+                const H = randInt(25, 65);
+                const v0 = randInt(10, 20);
+                // Megoldjuk: -H = v0*t - 0.5*g*t^2  =>  0.5*g*t^2 - v0*t - H = 0
+                const a = 0.5 * g;
+                const b = -v0;
+                const c = -H;
+                const disc = b * b - 4 * a * c;
+                const tTotal = (-b + Math.sqrt(disc)) / (2 * a);
+                const vImpact = Math.sqrt(v0 * v0 + 2 * g * H);
+
+                return {
+                    category: 'Felfelé hajítás magas épületről',
+                    text: `Egy $${H}\\text{ m}$ magas épület tetejéről függőlegesen felfelé eldobunk egy teniszlabdát $v_0 = ${v0}\\text{ m/s}$ kezdősebességgel. A labda az épület mellett elzuhanva a talajra esik. Mennyi idő telik el az eldobástól a földet érésig, és mekkora sebességgel csapódik a talajba?`,
+                    inputs: [
+                        { id: 't', label: 'Teljes mozgásidő ($t$)', unit: 's', answer: tTotal },
+                        { id: 'v', label: 'Becsapódási sebesség ($v$)', unit: 'm/s', answer: vImpact }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. Koordináta-rendszer és adatok:</p>
+                            <p>Válasszuk a kezdőpontot a tetőn ($y_0 = 0$), a pozitív irány mutasson felfelé! Ekkor a talaj koordinátája $y = -${H}\\text{ m}$, $v_0 = +${v0}\\text{ m/s}$, gyorsulás $a = -g = -${gStr}\\text{ m/s}^2$.</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. A teljes idő meghatározása másodfokú egyenlettel:</p>
+                            <p>$$y = v_0 t - \\frac{g}{2} t^2 \\implies -${H} = ${v0}t - ${fmt(a, 3)}t^2$$</p>
+                            <p>$$${fmt(a, 3)}t^2 - ${v0}t - ${H} = 0$$</p>
+                            <p>A megoldóképlet pozitív gyöke: $$t = \\frac{${v0} + \\sqrt{(-${v0})^2 - 4 \\cdot ${fmt(a, 3)} \\cdot (-${H})}}{2 \\cdot ${fmt(a, 3)}} = \\mathbf{${fmt(tTotal, 2)}\\text{ s}}$$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">3. Becsapódási sebesség:</p>
+                            <p>$$v = |v_0 - g \\cdot t| = |${v0} - ${gStr} \\cdot ${fmt(tTotal, 2)}| = \\mathbf{${fmt(vImpact, 2)}\\text{ m/s}}$$</p>
+                        </div>
+                    `
+                };
+            } else {
+                // Két test: az egyiket leejtjük H magasról, a másikat a talajról felfelé lőjük v0 sebességgel. Mikor és hol találkoznak?
+                const v0 = randInt(18, 30);
+                // Olyan H-t választunk, hogy a találkozás időpontja t = H / v0 ésszerű legyen (pl. 1.5 - 3.0 s)
+                const tMeet = randFloat(1.5, 2.8, 1);
+                const H = Math.round(v0 * tMeet);
+                const exactT = H / v0;
+                const meetHeight = v0 * exactT - 0.5 * g * exactT * exactT;
+
+                return {
+                    category: 'Két test találkozása',
+                    text: `Egy $${H}\\text{ m}$ magas daru gémjéről kezdősebesség nélkül elejtenek egy csavart, és pontosan ugyanebben a pillanatban a talajról függőlegesen felfelé fellőnek egy jelzőrakétát $v_0 = ${v0}\\text{ m/s}$ kezdősebességgel. Mennyi idő múlva, és a talajtól mérve milyen magasan találkozik a két test?`,
+                    inputs: [
+                        { id: 't', label: 'Találkozás időpontja ($t$)', unit: 's', answer: exactT },
+                        { id: 'y', label: 'Találkozási magasság ($y$)', unit: 'm', answer: meetHeight }
+                    ],
+                    solutionHtml: `
+                        <div>
+                            <p class="font-semibold text-slate-900">1. A két test magasságfüggvénye (talajtól mérve):</p>
+                            <p>A lefelé eső csavar magassága: $y_1(t) = H - \\frac{g}{2}t^2$</p>
+                            <p>A felfelé lőtt rakéta magassága: $y_2(t) = v_0 t - \\frac{g}{2}t^2$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">2. A találkozás időpontja ($y_1(t) = y_2(t)$):</p>
+                            <p>$$H - \\frac{g}{2}t^2 = v_0 t - \\frac{g}{2}t^2$$</p>
+                            <p>A $\\frac{g}{2}t^2$ tagok kiesnek, így: $$H = v_0 \\cdot t \\implies t = \\frac{H}{v_0} = \\frac{${H}}{${v0}} = \\mathbf{${fmt(exactT, 2)}\\text{ s}}$$</p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-slate-900">3. A találkozás magassága:</p>
+                            <p>$$y = v_0 t - \\frac{g}{2}t^2 = ${v0} \\cdot ${fmt(exactT, 2)} - \\frac{${gStr}}{2} \\cdot (${fmt(exactT, 2)})^2 = ${H} - ${fmt(0.5 * g * exactT * exactT, 2)} = \\mathbf{${fmt(meetHeight, 2)}\\text{ m}}$$</p>
+                        </div>
+                    `
+                };
+            }
+        }
+
+        // --- FELADAT BETÖLTÉSE ÉS ELLENŐRZÉS ---
+        function generateNewProblem() {
+            isProblemSolved = false;
+
+            // Visszajelzés és levezetés elrejtése
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.classList.add('hidden');
+            feedbackBox.innerHTML = '';
+
+            const solutionBox = document.getElementById('solution-box');
+            solutionBox.classList.add('hidden');
+            document.getElementById('btn-solution-text').textContent = 'Levezetés megtekintése';
+
+            // Feladat generálása a szint alapján
+            if (currentLevel === 1) {
+                currentProblem = generateLevel1();
+            } else if (currentLevel === 2) {
+                currentProblem = generateLevel2();
+            } else {
+                currentProblem = generateLevel3();
+            }
+
+            // Szövegek beállítása
+            document.getElementById('problem-category').textContent = currentProblem.category;
+            document.getElementById('problem-text').innerHTML = currentProblem.text;
+            document.getElementById('solution-content').innerHTML = currentProblem.solutionHtml;
+
+            // Beviteli mezők felépítése
+            const container = document.getElementById('inputs-container');
+            container.innerHTML = '';
+
+            if (currentProblem.inputs.length === 1) {
+                container.className = 'grid grid-cols-1 max-w-md gap-4';
+            } else {
+                container.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+            }
+
+            currentProblem.inputs.forEach((inp, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bg-white p-3.5 rounded-xl border border-slate-200 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all';
+                wrapper.id = `wrapper-${inp.id}`;
+
+                wrapper.innerHTML = `
+                    <label for="input-${inp.id}" class="block text-xs font-semibold text-slate-600 mb-1.5">
+                        ${inp.label}
+                    </label>
+                    <div class="relative flex items-center">
+                        <input
+                            type="text"
+                            inputmode="decimal"
+                            id="input-${inp.id}"
+                            autocomplete="off"
+                            placeholder="Pl. 12,5"
+                            class="w-full pr-14 py-1.5 text-base sm:text-lg font-bold text-slate-900 bg-transparent focus:outline-none"
+                        >
+                        <span class="absolute right-0 px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 font-semibold text-xs border border-slate-200">
+                            ${inp.unit}
+                        </span>
+                    </div>
+                `;
+                container.appendChild(wrapper);
+            });
+
+            // MathJax újratördelése
+            typesetMath();
+        }
+
+        function checkAnswers() {
+            if (!currentProblem) return;
+
+            const feedbackBox = document.getElementById('feedback-box');
+            let allFilled = true;
+            let allCorrect = true;
+            let details = [];
+
+            currentProblem.inputs.forEach(inp => {
+                const inputEl = document.getElementById(`input-${inp.id}`);
+                const wrapperEl = document.getElementById(`wrapper-${inp.id}`);
+                const userVal = parseUserNumber(inputEl.value);
+
+                if (isNaN(userVal)) {
+                    allFilled = false;
+                    allCorrect = false;
+                    wrapperEl.className = 'bg-amber-50/40 p-3.5 rounded-xl border-2 border-amber-400 transition-all';
+                    return;
+                }
+
+                // Tűréshatár számítása: relatív 2.5% vagy abszolút 0.15 (amelyik nagyobb, hogy kis számoknál is barátságos legyen)
+                const target = inp.answer;
+                const tolerance = Math.max(Math.abs(target) * 0.025, 0.15);
+                const diff = Math.abs(userVal - target);
+
+                if (diff <= tolerance) {
+                    wrapperEl.className = 'bg-emerald-50/50 p-3.5 rounded-xl border-2 border-emerald-500 transition-all';
+                    details.push(`<span class="text-emerald-800 font-semibold">✓ ${inp.label.split('(')[0].trim()}: Helyes!</span> (Pontos érték: ${fmt(target, 2)} ${inp.unit})`);
+                } else {
+                    allCorrect = false;
+                    wrapperEl.className = 'bg-rose-50/50 p-3.5 rounded-xl border-2 border-rose-500 transition-all';
+                    details.push(`<span class="text-rose-800 font-semibold">✕ ${inp.label.split('(')[0].trim()}: Pontatlan.</span> (A megadott érték: ${fmt(userVal, 2)} ${inp.unit})`);
+                }
+            });
+
+            feedbackBox.classList.remove('hidden');
+
+            if (!allFilled) {
+                feedbackBox.className = 'rounded-xl p-4 border border-amber-300 bg-amber-50 text-amber-900 text-sm fade-in flex items-start gap-3';
+                feedbackBox.innerHTML = `
+                    <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <p class="font-bold">Hiányzó adat!</p>
+                        <p class="text-xs mt-0.5">Kérlek, tölts ki minden válaszmezőt érvényes számmal az ellenőrzés előtt!</p>
+                    </div>
+                `;
+                typesetMath();
+                return;
+            }
+
+            if (allCorrect) {
+                feedbackBox.className = 'rounded-xl p-4 border border-emerald-300 bg-emerald-50 text-emerald-950 text-sm fade-in flex items-start gap-3';
+                feedbackBox.innerHTML = `
+                    <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="font-bold text-emerald-900 text-base">Kiváló munka! Minden válaszod helyes.</p>
+                        <div class="text-xs space-y-0.5">${details.join('<br>')}</div>
+                    </div>
+                `;
+
+                if (!isProblemSolved) {
+                    isProblemSolved = true;
+                    stats[currentLevel] += 1;
+                    saveStats();
+                }
+            } else {
+                feedbackBox.className = 'rounded-xl p-4 border border-rose-300 bg-rose-50 text-rose-950 text-sm fade-in flex items-start gap-3';
+                feedbackBox.innerHTML = `
+                    <div class="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="font-bold text-rose-900 text-base">Még nem teljesen pontos, próbáld újra!</p>
+                        <div class="text-xs space-y-0.5">${details.join('<br>')}</div>
+                        <p class="text-xs text-rose-800 pt-1">Tipp: Ellenőrizd a mértékegységeket, vagy kattints a „Levezetés megtekintése” gombra, ha elakadtál.</p>
+                    </div>
+                `;
+            }
+
+            typesetMath();
+        }
+
+        // Indítás az oldal betöltésekor
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            selectLevel(1);
+        });
+    </script>
+</body>
+</html>
